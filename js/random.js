@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════════════
-//  EXAMEN ALÉATOIRE
+//  EXAMEN ALÉATOIRE — Tirage au sort d'exercices personnalisé
 // ═══════════════════════════════════════════════════════════════
 
 function openRandomExamModal() {
@@ -13,7 +13,8 @@ function openRandomExamModal() {
       <span class="text-xs text-slate-500">${count} exos</span>
     </label>`).join('');
   updateRandomMax();
-  modal.classList.remove('hidden'); modal.classList.add('flex');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
 }
 
 function updateRandomMax() {
@@ -30,43 +31,87 @@ function getSelectedRandomChapters() {
 
 function closeRandomExamModal() {
   const modal = document.getElementById('random-modal');
-  modal.classList.add('hidden'); modal.classList.remove('flex');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
 }
 
 function shuffle(arr) {
   const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
   return a;
 }
 
 function generateRandomExam() {
   const chapters = getSelectedRandomChapters();
   if (!chapters.length) { toast("Sélectionnez au moins un chapitre", 'error'); return; }
+
   const count = parseInt(document.getElementById('random-count').value);
   const pool = EXERCISES.filter(ex => chapters.includes(ex.chapter));
+
   if (!count || count < 1) { toast("Nombre invalide", 'error'); return; }
-  if (count > pool.length) { toast(`Max ${pool.length}`, 'error'); return; }
+  if (count > pool.length) { toast(`Maximum ${pool.length} pour ces chapitres`, 'error'); return; }
+
+  // ⭐ NOUVEAU — Confirmation avant écrasement (les réponses/verdicts des exercices tirés sont effacés)
+  const hasPreviousData = state.answers && Object.keys(state.answers).length > 0;
+  if (hasPreviousData) {
+    const msg = "Générer un nouvel examen aléatoire ?\n\n" +
+                "⚠️ Les réponses et verdicts des exercices tirés au sort seront RÉINITIALISÉS.\n" +
+                "Les autres exercices (non tirés) gardent leur progression.\n\n" +
+                "Continuer ?";
+    if (!confirm(msg)) return;
+  }
+
   const selected = shuffle(pool).slice(0, count);
+
   state.selection = { ids: selected.map(ex => ex.id) };
-  selected.forEach(ex => { delete state.answers[ex.id]; delete state.verdicts[ex.id]; });
-  state.mode = 'training'; state.examStart = null; state.examDuration = null; state.examSubmitted = false;
+  // Réinitialiser les réponses/verdicts uniquement pour les exercices de la sélection
+  selected.forEach(ex => {
+    delete state.answers[ex.id];
+    delete state.verdicts[ex.id];
+  });
+
+  state.mode = 'training';
+  state.examStart = null;
+  state.examDuration = null;
+  state.examSubmitted = false;
+
   currentId = selected[0].id;
   const firstEx = EXERCISES.find(ex => ex.id === selected[0].id);
   if (firstEx) state.openChapter = firstEx.chapter;
-  saveState(); closeRandomExamModal();
-  renderHeader(); renderSidebar(); renderExercise(); updateProgress(); renderSelectionBanner();
+
+  saveState();
+  closeRandomExamModal();
+  renderHeader();
+  renderSidebar();
+  renderExercise();
+  updateProgress();
+  renderSelectionBanner();
   toast(`${selected.length} exercices tirés au sort`, 'success');
 }
 
 function clearSelection() {
-  if (!confirm("Revenir à la banque complète ?")) return;
-  state.selection = null; saveState();
+  // ⭐ AMÉLIORÉ — Message plus explicite sur ce qui est conservé
+  const msg = "Revenir à la banque complète ?\n\n" +
+              "✔️ Vos réponses et votre progression sont CONSERVÉES.\n" +
+              "❌ La sélection aléatoire est simplement levée (vous retrouvez les 155 exercices).\n\n" +
+              "Continuer ?";
+  if (!confirm(msg)) return;
+
+  state.selection = null;
+  saveState();
   const active = getActiveExercises();
   if (!active.find(ex => ex.id === currentId)) currentId = active[0].id;
   const cur = active.find(ex => ex.id === currentId);
   if (cur) state.openChapter = cur.chapter;
-  renderSidebar(); renderExercise(); renderHeader(); renderSelectionBanner(); updateProgress();
-  toast("Banque complète", 'info');
+  renderSidebar();
+  renderExercise();
+  renderHeader();
+  renderSelectionBanner();
+  updateProgress();
+  toast("Banque complète rétablie", 'info');
 }
 
 function renderSelectionBanner() {
@@ -74,5 +119,7 @@ function renderSelectionBanner() {
   if (state.selection && state.selection.ids?.length) {
     b.classList.remove('hidden');
     document.getElementById('selection-count').textContent = state.selection.ids.length;
-  } else b.classList.add('hidden');
+  } else {
+    b.classList.add('hidden');
+  }
 }
