@@ -586,12 +586,14 @@ tab[2] = 15;`,memory:[{name:'tab[0]',type:'int',address:'F800',expected:'5'},{na
 
 {id:'struct-001',type:'mcq',chapter:'Chapitre 5 — Structures',title:'Accès via pointeur',difficulty:2,statement:'Équivalent de `e->ce` ?',multi:false,options:[{id:'a',text:'`*e.ce`'},{id:'b',text:'`(*e).ce`'},{id:'c',text:'`&e.ce`'},{id:'d',text:'`e.ce`'}],correct:['b'],explanation:'`e->ce` = `(*e).ce`.'},
 {id:'struct-002',type:'predict',chapter:'Chapitre 5 — Structures',title:'Précédence -> et &',difficulty:4,statement:'On suppose (adresses fictives) : `etd` est rangée à l\'adresse `F100`, `int` et `float` font **4 octets**, sans alignement. Quelles adresses sont affichées ?',code:`typedef struct { int ce; float notes[3]; float moyenne; } ETUDIANT;
- 
+
 ETUDIANT etd;
 ETUDIANT *e = &etd;
 printf("%p\\n", (void*)&e->ce);
 printf("%p\\n", (void*)&e->notes);
 printf("%p\\n", (void*)&(e->ce));`,expected:'F100\nF104\nF100',normalize:'trim-lines',explanation:'`->` est prioritaire sur `&` : `&e->ce` = `&(e->ce)`.\n- `ce` est le 1er champ → `F100`.\n- `notes` suit juste après `ce` (4 octets) → `F100 + 4 = F104`.\n- La 3e ligne est la même expression que la 1re → `F100`.'},
+{id:'struct-003',type:'predict',chapter:'Chapitre 5 — Structures',title:'Imbrication',difficulty:4,statement:'Qu\'affiche ce programme ?',code:`typedef struct { int jour, mois, annee; } DATE;
+typedef struct { int ce; DATE date_naiss; float moyenne; } ETUDIANT;
 ETUDIANT etd;
 etd.ce = 999;
 etd.date_naiss.jour = 12;
