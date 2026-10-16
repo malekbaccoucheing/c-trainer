@@ -28,18 +28,30 @@
         <span class="text-red-400 text-xs uppercase tracking-wider">Examen</span>
         <span id="exam-timer-value" class="mono text-red-300 font-bold">--:--</span>
       </div>
-      <button onclick="submitExam()" id="exam-submit-btn" class="hidden px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition">Soumettre</button>
-      <button onclick="showStats()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">📊 Stats</button>
-      <button onclick="exportPDF()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">📄 PDF</button>
-      <button onclick="exportProgress()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">💾 Export</button>
-      <button onclick="triggerImport()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">📥 Import</button>
-      <button onclick="openRandomExamModal()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition">🎲 Aléatoire</button>
-      <button onclick="toggleMode()" id="mode-btn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition">Mode Examen</button>
+      <button onclick="submitExam()" id="exam-submit-btn" title="Soumettre ton examen"
+        class="hidden px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition">Soumettre</button>
+      <button onclick="openHelp()" id="help-btn" title="Afficher le guide de démarrage"
+        class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg text-sm transition">
+        ❓ Aide
+      </button>
+      <button onclick="showStats()" title="Voir ta progression par chapitre et par format d'exercice"
+        class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">📊 Stats</button>
+      <button onclick="exportPDF()" title="Télécharger une synthèse imprimable avec tes erreurs"
+        class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">📄 PDF</button>
+      <button onclick="exportProgress()" title="Sauvegarder ta progression dans un fichier"
+        class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">💾 Export</button>
+      <button onclick="triggerImport()" title="Restaurer une progression depuis un fichier"
+        class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">📥 Import</button>
+      <button onclick="openRandomExamModal()" title="Générer un examen avec des exercices tirés au sort"
+        class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition">🎲 Aléatoire</button>
+      <button onclick="toggleMode()" id="mode-btn" title="Passer en mode examen chronométré (correction cachée)"
+        class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition">Mode Examen</button>
       <div class="text-right px-2">
         <div class="text-xs text-slate-500">Progression</div>
         <div class="text-sm font-medium text-emerald-400" id="progress-text">0 / 0</div>
       </div>
-      <button onclick="resetAll()" class="text-xs text-slate-500 hover:text-slate-300 transition ml-2">Reset</button>
+      <button onclick="resetAll()" title="Effacer toute ta progression (attention !)"
+        class="text-xs text-slate-500 hover:text-slate-300 transition ml-2">Reset</button>
     </div>
   </div>
   <div class="h-0.5 bg-slate-800"><div id="progress-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div></div>
@@ -101,6 +113,37 @@
   </div>
 </div>
 
+<!-- ⭐ Modale Aide / Guide de démarrage -->
+<div id="help-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-40 items-center justify-center p-4">
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl">
+    <div class="border-b border-slate-700 px-6 py-4 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+          <span class="text-amber-300 text-lg">❓</span>
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-slate-100 leading-tight">Guide de démarrage</h2>
+          <p class="text-xs text-slate-500">Tout ce qu'il faut savoir pour bien utiliser la plateforme</p>
+        </div>
+      </div>
+      <button onclick="closeHelp()" class="text-slate-500 hover:text-slate-200 transition text-2xl leading-none">&times;</button>
+    </div>
+    <div class="overflow-y-auto px-6 py-5">
+      <div id="help-content"></div>
+    </div>
+    <div class="border-t border-slate-700 px-6 py-4 flex items-center justify-between gap-4 shrink-0 flex-wrap">
+      <label id="help-dont-show-wrap" class="hidden items-center gap-2 text-xs text-slate-400 cursor-pointer select-none">
+        <input type="checkbox" id="help-dont-show" class="w-4 h-4 accent-emerald-500">
+        <span>Ne plus afficher au démarrage</span>
+      </label>
+      <button onclick="document.getElementById('help-close-btn').click()" id="help-close-btn"
+        class="ml-auto px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition">
+        J'ai compris
+      </button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="import-input" accept="application/json,.json" class="hidden">
 
 <!-- Scripts — l'ORDRE est important -->
@@ -113,6 +156,7 @@
 <script src="js/io.js"></script>
 <script src="js/sidebar.js"></script>
 <script src="js/render.js"></script>
+<script src="js/help.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
