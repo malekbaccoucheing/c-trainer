@@ -30,7 +30,8 @@
       </div>
       <button onclick="submitExam()" id="exam-submit-btn" title="Soumettre ton examen"
         class="hidden px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition">Soumettre</button>
-      <button onclick="openHelp()" id="help-btn" title="Afficher le guide de démarrage"
+      <!-- ⭐ Le listener est ajouté par initHelp(), pas d'onclick inline -->
+      <button id="help-btn" title="Afficher le guide de démarrage"
         class="px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 rounded-lg text-sm transition">
         ❓ Aide
       </button>
@@ -113,7 +114,6 @@
   </div>
 </div>
 
-<!-- ⭐ Modale Aide / Guide de démarrage -->
 <div id="help-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-40 items-center justify-center p-4">
   <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl">
     <div class="border-b border-slate-700 px-6 py-4 flex items-center justify-between shrink-0">
@@ -136,7 +136,8 @@
         <input type="checkbox" id="help-dont-show" class="w-4 h-4 accent-emerald-500">
         <span>Ne plus afficher au démarrage</span>
       </label>
-      <button onclick="document.getElementById('help-close-btn').click()" id="help-close-btn"
+      <!-- ⭐ Le listener est ajouté par initHelp(), pas d'onclick inline qui rappelle .click() -->
+      <button id="help-close-btn"
         class="ml-auto px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition">
         J'ai compris
       </button>
@@ -148,6 +149,7 @@
 
 <!-- Scripts — l'ORDRE est important -->
 <script src="js/exercises.js"></script>
+<script src="js/qcm-feedback.js"></script>
 <script src="js/core.js"></script>
 <script src="js/graders.js"></script>
 <script src="js/exam.js"></script>
