@@ -75,7 +75,7 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// ⭐ CORRIGÉ — Protection des blocs de code ET du code inline par sentinelles
+// Protection des blocs de code ET du code inline par sentinelles.
 // Cela empêche le markdown (**gras**, listes, etc.) de casser le contenu
 // à l'intérieur des balises <code> ou <pre>.
 function renderMarkdown(s) {
@@ -116,13 +116,44 @@ function renderMarkdown(s) {
 }
 
 // ---- Normalisation pour comparaison de chaînes ----
+//
+// ⭐ CORRECTION du point signalé par l'auditrice :
+//
+// L'ancien `case 'trim-lines'` terminait par `.trim()`, ce qui supprimait
+// TOUS les espaces en début et fin de la chaîne complète. Or, plusieurs
+// exercices (base-010, base-019, ctrl-020, ctrl-021, ctrl-023) ont un
+// résultat attendu qui commence par un ou plusieurs espaces significatifs :
+//
+//   base-010 : "   1   2\n1   |2"
+//   base-019 : "2.300000 4.500000\n2.30 4.50\n 2.30|4.50 |"
+//   ctrl-020 : " 1 \n 2 \nla valeur de i est 3 "
+//
+// Avec `.trim()`, le "   1" de base-010 devenait "1", et l'étudiant qui
+// avait saisi correctement les espaces de tête était injustement pénalisé.
+//
+// La nouvelle version :
+//   1. Supprime les espaces en FIN de chaque ligne (avec `.trimEnd()`).
+//      Cela tolère le copier-coller ou une saisie distraite avec des
+//      espaces invisibles en fin de ligne.
+//   2. Supprime les SAUTS DE LIGNE FINAUX (avec `.replace(/\n+$/, '')`),
+//      ce qui évite qu'une dernière ligne vide ne soit comptée comme une
+//      ligne à part entière.
+//   3. PRÉSERVE les espaces en DÉBUT de ligne, car ils font partie de la
+//      sortie attendue quand le programme utilise des gabarits d'affichage.
 function normalizeStr(s, mode = 'trim') {
   if (typeof s !== 'string') s = String(s ?? '');
   switch (mode) {
-    case 'exact': return s;
-    case 'trim': return s.trim();
-    case 'trim-lines': return s.split('\n').map(l => l.trimEnd()).join('\n').trim();
-    case 'whitespace': return s.replace(/\s+/g, ' ').trim();
-    default: return s.trim();
+    case 'exact':
+      return s;
+    case 'trim':
+      return s.trim();
+    case 'trim-lines':
+      // Attention : on NE fait PAS de .trim() final, sinon les espaces
+      // en début de première ligne seraient supprimés.
+      return s.split('\n').map(l => l.trimEnd()).join('\n').replace(/\n+$/, '');
+    case 'whitespace':
+      return s.replace(/\s+/g, ' ').trim();
+    default:
+      return s.trim();
   }
 }
