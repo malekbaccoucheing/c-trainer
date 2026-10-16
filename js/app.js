@@ -36,3 +36,6 @@ document.addEventListener('keydown', (e) => {
 });
 document.getElementById('stats-modal').addEventListener('click', (e) => { if (e.target.id === 'stats-modal') closeStats(); });
 document.getElementById('random-modal').addEventListener('click', (e) => { if (e.target.id === 'random-modal') closeRandomExamModal(); });
+
+// ⭐ Initialisation du guide d'aide (affiche la modale au premier lancement)
+initHelp();
