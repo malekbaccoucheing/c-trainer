@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Entraînement C — EIE Carthage</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/c.min.js"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+<header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-20">
+  <div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-3 flex-wrap">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center">
+        <span class="text-emerald-400 font-bold text-lg">C</span>
+      </div>
+      <div>
+        <h1 class="font-semibold text-slate-100 leading-tight">Entraînement C</h1>
+        <p class="text-xs text-slate-500">EIE Carthage — 1ère année</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap">
+      <div id="exam-timer" class="hidden items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/40">
+        <span class="text-red-400 text-xs uppercase tracking-wider">Examen</span>
+        <span id="exam-timer-value" class="mono text-red-300 font-bold">--:--</span>
+      </div>
+      <button onclick="submitExam()" id="exam-submit-btn" class="hidden px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-lg text-sm font-medium transition">Soumettre</button>
+      <button onclick="showStats()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">📊 Stats</button>
+      <button onclick="exportPDF()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">📄 PDF</button>
+      <button onclick="exportProgress()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">💾 Export</button>
+      <button onclick="triggerImport()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition">📥 Import</button>
+      <button onclick="openRandomExamModal()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition">🎲 Aléatoire</button>
+      <button onclick="toggleMode()" id="mode-btn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-sm font-medium transition">Mode Examen</button>
+      <div class="text-right px-2">
+        <div class="text-xs text-slate-500">Progression</div>
+        <div class="text-sm font-medium text-emerald-400" id="progress-text">0 / 0</div>
+      </div>
+      <button onclick="resetAll()" class="text-xs text-slate-500 hover:text-slate-300 transition ml-2">Reset</button>
+    </div>
+  </div>
+  <div class="h-0.5 bg-slate-800"><div id="progress-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div></div>
+</header>
+
+<div id="exam-banner" class="hidden bg-red-500/10 border-b border-red-500/30 px-6 py-2">
+  <div class="max-w-7xl mx-auto text-sm text-red-300 flex items-center gap-2">
+    <strong>Mode Examen actif</strong> — Réponses enregistrées automatiquement.
+  </div>
+</div>
+<div id="selection-banner" class="hidden bg-indigo-500/10 border-b border-indigo-500/30 px-6 py-2">
+  <div class="max-w-7xl mx-auto text-sm text-indigo-300 flex items-center justify-between gap-3 flex-wrap">
+    <div>🎲 <strong>Sélection aléatoire active</strong> — <span id="selection-count">0</span> exercices.</div>
+    <button onclick="clearSelection()" class="text-xs px-2 py-1 rounded bg-indigo-500/20 hover:bg-indigo-500/30 transition">Revenir à la banque complète</button>
+  </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+  <aside class="lg:sticky lg:top-20 lg:self-start lg:max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <div class="flex items-center justify-between mb-3 px-2">
+      <div class="text-xs uppercase tracking-wider text-slate-500">Exercices</div>
+      <button onclick="collapseAll()" class="text-[0.65rem] text-slate-500 hover:text-slate-300 transition" title="Tout replier">⌃ Tout replier</button>
+    </div>
+    <nav id="sidebar" class="space-y-0.5"></nav>
+  </aside>
+  <main id="main" class="min-w-0"></main>
+</div>
+
+<div id="stats-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-30 items-center justify-center p-4">
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
+    <div class="sticky top-0 bg-slate-900 border-b border-slate-700 px-6 py-4 flex items-center justify-between">
+      <h2 class="text-xl font-semibold text-slate-100">Statistiques</h2>
+      <button onclick="closeStats()" class="text-slate-500 hover:text-slate-200 transition text-2xl leading-none">&times;</button>
+    </div>
+    <div id="stats-content" class="p-6"></div>
+  </div>
+</div>
+
+<div id="random-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-30 items-center justify-center p-4">
+  <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full shadow-2xl">
+    <div class="border-b border-slate-700 px-6 py-4 flex items-center justify-between">
+      <h2 class="text-xl font-semibold text-slate-100">🎲 Examen aléatoire</h2>
+      <button onclick="closeRandomExamModal()" class="text-slate-500 hover:text-slate-200 transition text-2xl leading-none">&times;</button>
+    </div>
+    <div class="p-6 space-y-5">
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-slate-500 mb-2">Nombre total</label>
+        <input id="random-count" type="number" min="1" max="155" value="20" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-slate-100 focus:border-indigo-500 focus:outline-none">
+      </div>
+      <div>
+        <label class="block text-xs uppercase tracking-wider text-slate-500 mb-2">Chapitres</label>
+        <div id="random-chapters" class="space-y-2"></div>
+      </div>
+      <div class="flex gap-2 pt-2">
+        <button onclick="generateRandomExam()" class="flex-1 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition">Générer</button>
+        <button onclick="closeRandomExamModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="import-input" accept="application/json,.json" class="hidden">
+
+<!-- Scripts — l'ORDRE est important -->
+<script src="js/exercises.js"></script>
+<script src="js/core.js"></script>
+<script src="js/graders.js"></script>
+<script src="js/exam.js"></script>
+<script src="js/random.js"></script>
+<script src="js/stats.js"></script>
+<script src="js/io.js"></script>
+<script src="js/sidebar.js"></script>
+<script src="js/render.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
