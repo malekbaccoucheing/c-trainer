@@ -44,6 +44,18 @@ function getActiveExercises() {
   return filtered.length > 0 ? filtered : EXERCISES;
 }
 
+// ---- Résolution unifiée de la "réponse attendue" selon le type ----
+function getExpectedString(ex) {
+  if (!ex) return '';
+  if (ex.expected) return ex.expected;
+  if (ex.correct) return Array.isArray(ex.correct) ? ex.correct.join(', ') : String(ex.correct);
+  if (ex.bugLines) return ex.bugLines.join(', ');
+  if (ex.blanks) return ex.blanks.map(b => b.correct).join(', ');
+  if (ex.rows) return ex.rows.map(r => r.join(' | ')).join(' / ');
+  if (ex.memory) return ex.memory.map(m => `${m.name}=${m.expected}`).join(', ');
+  return '';
+}
+
 // ---- Toast ----
 function toast(msg, type = 'info') {
   const el = document.createElement('div');
@@ -63,16 +75,43 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-// ---- Markdown léger (pour UI Tailwind) ----
+// ⭐ CORRIGÉ — Protection des blocs de code ET du code inline par sentinelles
+// Cela empêche le markdown (**gras**, listes, etc.) de casser le contenu
+// à l'intérieur des balises <code> ou <pre>.
 function renderMarkdown(s) {
   let html = escapeHtml(s);
-  html = html.replace(/`([^`]+)`/g, '<code class="bg-slate-800 text-emerald-300 px-1.5 py-0.5 rounded text-[0.85em]">$1</code>');
+
+  // ---------- ÉTAPE 1 : protéger les blocs de code ```lang ... ``` ----------
+  const codeBlocks = [];
+  html = html.replace(/```(\w*)\r?\n([\s\S]*?)```/g, (m, lang, code) => {
+    const idx = codeBlocks.length;
+    codeBlocks.push(`<pre class="code-block my-2"><code class="language-${lang || 'c'}">${code}</code></pre>`);
+    return `\x00B${idx}\x00`;
+  });
+
+  // ---------- ÉTAPE 2 : protéger le code inline `...` ----------
+  // Sans cette protection, `ETUDIANT **tab` serait transformé en
+  // <code>ETUDIANT <strong>tab</code>...</strong> → HTML cassé.
+  const inlineCodes = [];
+  html = html.replace(/`([^`\n]+)`/g, (m, code) => {
+    const idx = inlineCodes.length;
+    inlineCodes.push(`<code class="bg-slate-800 text-emerald-300 px-1.5 py-0.5 rounded text-[0.85em]">${code}</code>`);
+    return `\x00I${idx}\x00`;
+  });
+
+  // ---------- ÉTAPE 3 : formatage Markdown sur le texte restant ----------
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="text-slate-100">$1</strong>');
   html = html.replace(/^\s*-\s+(.+)$/gm, '<li class="ml-4 list-disc">$1</li>');
   html = html.replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => `<ul class="space-y-1 my-2">${m}</ul>`);
   html = html.replace(/\n/g, '<br>');
   html = html.replace(/<\/li><br>/g, '</li>').replace(/<br><li/g, '<li').replace(/<\/ul><br>/g, '</ul>');
-  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (m, lang, code) => `<pre class="code-block my-2"><code class="language-${lang || 'c'}">${code}</code></pre>`);
+
+  // ---------- ÉTAPE 4 : restaurer le code inline ----------
+  html = html.replace(/\x00I(\d+)\x00/g, (m, idx) => inlineCodes[parseInt(idx, 10)]);
+
+  // ---------- ÉTAPE 5 : restaurer les blocs de code ----------
+  html = html.replace(/\x00B(\d+)\x00/g, (m, idx) => codeBlocks[parseInt(idx, 10)]);
+
   return html;
 }
 
