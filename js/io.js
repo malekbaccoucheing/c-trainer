@@ -31,7 +31,7 @@ function exportProgress() {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
   const done = EXERCISES.filter(ex => state.verdicts[ex.id]?.correct).length;
-  toast(`Exporté (${done}/${EXERCISES.length})`, 'success');
+  toast(`Votre progression a été exportée : ${done} exercices réussis sur ${EXERCISES.length}.`, 'success');
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -51,11 +51,11 @@ function handleImportFile(event) {
 
       // ⭐ Vérifications préliminaires
       if (!data || typeof data !== 'object') {
-        toast("Fichier invalide : contenu illisible", 'error');
+        toast("Ce fichier est invalide, car son contenu est illisible.", 'error');
         return;
       }
       if (!data.state || typeof data.state.answers !== 'object') {
-        toast("Fichier invalide : structure incorrecte", 'error');
+        toast("Ce fichier est invalide, car sa structure ne correspond pas à celle d'une progression exportée.", 'error');
         return;
       }
 
@@ -66,34 +66,34 @@ function handleImportFile(event) {
           "⚠️ Ce fichier ne contient pas de numéro de version.\n\n" +
           "Il peut provenir d'une version antérieure de la plateforme " +
           "et être partiellement incompatible.\n\n" +
-          "Continuer l'import ?"
+          "Voulez-vous continuer l'import ?"
         )) return;
       } else if (fileVersion > EXPORT_VERSION) {
         toast(
-          `Fichier d'une version plus récente (v${fileVersion}). Mise à jour recommandée.`,
+          `Ce fichier provient d'une version plus récente (version ${fileVersion}). Une mise à jour de la plateforme est recommandée.`,
           'error'
         );
         if (!confirm(
-          `Ce fichier vient d'une version PLUS RÉCENTE (v${fileVersion}) que la plateforme actuelle (v${EXPORT_VERSION}).\n\n` +
-          "Certaines données peuvent être mal interprétées ou perdues.\n\n" +
-          "Continuer quand même ?"
+          `Ce fichier provient d'une version PLUS RÉCENTE (version ${fileVersion}) que la plateforme actuelle (version ${EXPORT_VERSION}).\n\n` +
+          "Certaines données risquent d'être mal interprétées ou perdues.\n\n" +
+          "Voulez-vous continuer quand même ?"
         )) return;
       } else if (fileVersion < EXPORT_VERSION) {
         if (!confirm(
-          `Fichier d'une version antérieure (v${fileVersion}).\n\n` +
+          `Ce fichier provient d'une version antérieure (version ${fileVersion}).\n\n` +
           "L'import va migrer vos données vers la version actuelle " +
-          `(v${EXPORT_VERSION}). Vos réponses seront préservées.\n\n` +
-          "Continuer ?"
+          `(version ${EXPORT_VERSION}). Vos réponses seront préservées.\n\n` +
+          "Voulez-vous continuer ?"
         )) return;
       } else {
         // Même version → confirmation standard
         const done = EXERCISES.filter(ex => data.state.verdicts[ex.id]?.correct).length;
         if (!confirm(
-          "Importer cette progression ?\n\n" +
-          `📊 Réussis dans le fichier : ${done}\n` +
-          `📅 Exporté le : ${data.exportedAt ? new Date(data.exportedAt).toLocaleString('fr-FR') : 'inconnu'}\n\n` +
+          "Voulez-vous importer cette progression ?\n\n" +
+          `📊 Exercices réussis dans ce fichier : ${done}\n` +
+          `📅 Date de l'export : ${data.exportedAt ? new Date(data.exportedAt).toLocaleString('fr-FR') : 'inconnue'}\n\n` +
           "⚠️ Cette action REMPLACE votre progression actuelle.\n\n" +
-          "Continuer ?"
+          "Voulez-vous continuer ?"
         )) return;
       }
 
@@ -113,7 +113,7 @@ function handleImportFile(event) {
       });
 
       if (droppedAnswers > 0) {
-        toast(`${droppedAnswers} réponse(s) orpheline(s) ignorée(s)`, 'info');
+        toast(`Des réponses orphelines ont été ignorées, car leurs exercices n'existent plus dans la banque : ${droppedAnswers} au total.`, 'info');
       }
 
       // Fusionner avec le state par défaut
@@ -145,10 +145,10 @@ function handleImportFile(event) {
       }
 
       const done = EXERCISES.filter(ex => state.verdicts[ex.id]?.correct).length;
-      toast(`Progression importée : ${done} réussis`, 'success');
+      toast(`Votre progression a été importée : ${done} exercices réussis.`, 'success');
     } catch (err) {
       console.error(err);
-      toast("Erreur de lecture du fichier JSON", 'error');
+      toast("Le fichier JSON n'a pas pu être lu. Vérifiez qu'il provient bien d'un export de la plateforme.", 'error');
     } finally {
       // Reset input pour permettre de réimporter le même fichier
       event.target.value = '';
@@ -198,7 +198,7 @@ function formatExplanation(text) {
 // ─────────────────────────────────────────────────────────────
 function exportPDF() {
   const win = window.open('', '_blank');
-  if (!win) { toast("Autorisez les popups pour l'export PDF", 'error'); return; }
+  if (!win) { toast("Votre navigateur a bloqué l'ouverture de la fenêtre. Autorisez les fenêtres surgissantes pour ce site afin d'exporter le PDF.", 'error'); return; }
 
   const active = getActiveExercises();
   const global = computeScore();
@@ -243,10 +243,10 @@ function exportPDF() {
     if (ex.type === 'fillblanks') {
       const details = v.details || [];
       const wrong = details.filter(d => !d.ok);
-      if (wrong.length === 0) return `<div class="answer"><strong>Non répondu.</strong></div>`;
+      if (wrong.length === 0) return `<div class="answer"><strong>Vous n'avez pas répondu à cet exercice.</strong></div>`;
       return `<div class="answer">
         <strong>Trous incorrects :</strong>
-        <ul>${wrong.map(d => `<li>Blanc <code>${escapeHtml(d.id)}</code> — Vous : <code>${escapeHtml(d.user) || '(vide)'}</code> · Attendu : <code>${escapeHtml(d.correct)}</code></li>`).join('')}</ul>
+        <ul>${wrong.map(d => `<li>Pour le blanc <code>${escapeHtml(d.id)}</code>, vous avez écrit <code>${escapeHtml(d.user) || '(vide)'}</code>, alors que la réponse attendue était <code>${escapeHtml(d.correct)}</code>.</li>`).join('')}</ul>
       </div>`;
     }
 
@@ -254,11 +254,11 @@ function exportPDF() {
       const details = v.details || [];
       const wrongCells = details.flatMap((r, i) =>
         r.cells.map((c, j) => {
-          if (!c.ok) return `<li>Ligne ${i+1}, <code>${escapeHtml(ex.columns[j])}</code> — Vous : <code>${escapeHtml(c.user) || '(vide)'}</code> · Attendu : <code>${escapeHtml(c.correct)}</code></li>`;
+          if (!c.ok) return `<li>À la ligne ${i+1}, pour la colonne <code>${escapeHtml(ex.columns[j])}</code>, vous avez écrit <code>${escapeHtml(c.user) || '(vide)'}</code>, alors que la valeur attendue était <code>${escapeHtml(c.correct)}</code>.</li>`;
           return '';
         })
       ).filter(Boolean);
-      if (wrongCells.length === 0) return `<div class="answer"><strong>Non répondu.</strong></div>`;
+      if (wrongCells.length === 0) return `<div class="answer"><strong>Vous n'avez pas répondu à cet exercice.</strong></div>`;
       return `<div class="answer">
         <strong>Cellules incorrectes :</strong>
         <ul>${wrongCells.join('')}</ul>
@@ -268,22 +268,22 @@ function exportPDF() {
     if (ex.type === 'findbug') {
       const correctLines = (ex.bugLines || []).join(', ');
       return `<div class="answer">
-        <strong>Ligne cliquée :</strong> <code>${escapeHtml(v.user) || '(aucune)'}</code><br>
-        <strong>Ligne(s) attendue(s) :</strong> <code>${escapeHtml(correctLines)}</code>
+        <strong>Ligne que vous avez cliquée :</strong> <code>${escapeHtml(v.user) || '(aucune)'}</code><br>
+        <strong>Ligne ou lignes attendues :</strong> <code>${escapeHtml(correctLines)}</code>
       </div>`;
     }
 
     if (ex.type === 'memory') {
       const details = v.details || [];
       const wrong = details.filter(d => !d.ok);
-      if (wrong.length === 0) return `<div class="answer"><strong>Non répondu.</strong></div>`;
+      if (wrong.length === 0) return `<div class="answer"><strong>Vous n'avez pas répondu à cet exercice.</strong></div>`;
       return `<div class="answer">
         <strong>Cellules mémoire incorrectes :</strong>
-        <ul>${wrong.map(d => `<li><code>${escapeHtml(d.name)}</code> — Vous : <code>${escapeHtml(d.user) || '(vide)'}</code> · Attendu : <code>${escapeHtml(d.correct)}</code></li>`).join('')}</ul>
+        <ul>${wrong.map(d => `<li>Pour la cellule <code>${escapeHtml(d.name)}</code>, vous avez écrit <code>${escapeHtml(d.user) || '(vide)'}</code>, alors que la valeur attendue était <code>${escapeHtml(d.correct)}</code>.</li>`).join('')}</ul>
       </div>`;
     }
 
-    return `<div class="answer"><strong>Non répondu.</strong></div>`;
+    return `<div class="answer"><strong>Vous n'avez pas répondu à cet exercice.</strong></div>`;
   }
 
   function renderErrorItem({ ex, v }) {
@@ -305,7 +305,7 @@ function exportPDF() {
 
   const selectionNote = state.selection
     ? `<p style="background:#eef2ff; border-left:4px solid #6366f1; padding:10px 14px; border-radius:4px; color:#3730a3;">
-        🎲 Synthèse basée sur une <strong>sélection aléatoire</strong> de ${active.length} exercices.
+        🎲 Cette synthèse repose sur une <strong>sélection aléatoire</strong> de ${active.length} exercices.
       </p>`
     : '';
 
@@ -313,7 +313,7 @@ function exportPDF() {
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Synthèse Entraînement C — ${date}</title>
+<title>Synthèse de l'entraînement en langage C — ${date}</title>
 <style>
   @page { margin: 1.5cm; }
   body { font-family: Georgia, 'Times New Roman', serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #222; line-height: 1.5; font-size: 11pt; }
@@ -354,11 +354,11 @@ function exportPDF() {
 </style>
 </head>
 <body>
-  <h1>Synthèse d'entraînement C</h1>
-  <p class="subtitle">École Nationale d'Ingénieurs de Carthage — 1ère année · Généré le ${date}</p>
+  <h1>Synthèse de votre entraînement en langage C</h1>
+  <p class="subtitle">École Nationale d'Ingénieurs de Carthage, première année. Document généré le ${date}.</p>
   ${selectionNote}
   <div class="no-print">
-    <button onclick="window.print()">🖨️ Imprimer / Enregistrer en PDF</button>
+    <button onclick="window.print()">🖨️ Imprimer ou enregistrer en PDF</button>
   </div>
 
   <h2>Bilan global</h2>
@@ -387,11 +387,11 @@ function exportPDF() {
 
   ${errors.length > 0 ? `
     <h2>Exercices à revoir (${errors.length})</h2>
-    <p style="color:#6b7280; font-style:italic;">Chaque exercice ci-dessous contient votre erreur et l'explication détaillée du concept.</p>
+    <p style="color:#6b7280; font-style:italic;">Chaque exercice ci-dessous présente votre erreur, puis l'explication détaillée du concept concerné.</p>
     ${errors.map(renderErrorItem).join('')}
   ` : `
     <h2>🎉 Aucune erreur</h2>
-    <p>Félicitations — tous les exercices tentés ont été réussis.</p>
+    <p>Félicitations, vous avez réussi tous les exercices que vous avez tentés.</p>
   `}
 
   ${success.length > 0 ? `
@@ -404,7 +404,7 @@ function exportPDF() {
   ` : ''}
 
   <div class="footer">
-    Généré automatiquement par la plateforme d'entraînement C · EIE Carthage
+    Ce document a été généré automatiquement par la plateforme d'entraînement en langage C de l'École Nationale d'Ingénieurs de Carthage.
   </div>
 </body>
 </html>`;
