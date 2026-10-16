@@ -61,7 +61,7 @@ int z = {{3}};   // z = 7, puis i = 8`,blanks:[{id:'1',kind:'select',options:['i
 if (c1 < c2) printf("inf\\n");
 else printf("sup\\n");
 printf("%d\\n", 'z' - 'a');`,expected:'inf\n25',normalize:'trim-lines',explanation:'ASCII : 49 < 97.'},
-{id:'base-017',type:'mcq',chapter:'Chapitre 1 — Généralités',title:'Types et tailles',difficulty:2,statement:'Ordre croissant (64-bit) ?',multi:false,options:[{id:'a',text:'`char` < `int` < `long` < `double`'},{id:'b',text:'`int` < `char` < `long` < `double`'},{id:'c',text:'`char` < `short` < `int` < `double`'},{id:'d',text:'`char` < `int` < `double` < `long`'}],correct:['a'],explanation:'char=1, short=2, int=4, long=8, double=8.'},
+{id:'base-017',type:'mcq',chapter:'Chapitre 1 — Généralités',title:'Types et tailles',difficulty:2,statement:'Sur une architecture 64-bit classique, quel est l\'ordre **strictement croissant** des tailles (en octets) ?',multi:false,options:[{id:'a',text:'`char` < `short` < `int` < `double`'},{id:'b',text:'`int` < `char` < `long` < `double`'},{id:'c',text:'`char` < `int` < `long` < `double`'},{id:'d',text:'`char` < `int` < `double` < `long`'}],correct:['a'],explanation:'Sur une architecture 64-bit classique : `char` = 1 octet, `short` = 2 octets, `int` = 4 octets, `double` = 8 octets.\n\n→ Ordre **strictement croissant** : `char` < `short` < `int` < `double`.\n\n⚠️ Attention : `long` fait **aussi 8 octets** sur 64-bit, donc `long` et `double` ont la même taille — ce qui casse l\'ordre strict. C\'est pourquoi `char < int < long < double` est **faux** en strict (égalité en fin de chaîne).'},
 {id:'base-018',type:'predict',chapter:'Chapitre 1 — Généralités',title:'Cast explicite',difficulty:3,statement:'Qu\'affiche ce programme ?',code:`int n = 5, p = 2;
 double r1 = n / p;
 double r2 = (double)n / p;
@@ -224,7 +224,7 @@ for (i = 0; i < 3; i++) {
     }
     printf("\\n i:%d, et j:%d", i, j);
 }
-printf("\\n i:%d, et j:%d", i, j);`,expected:'\n i:0, et j:0\n i:0, et j:1\n i:0, et j:2\n i:0, et j:3\n i:2, et j:0\n i:2, et j:1\n i:2, et j:2\n i:2, et j:3\n i:3, et j:3',normalize:'trim-lines',explanation:'continue saute i=1.'},
+printf("\\n i:%d, et j:%d", i, j);`,expected:'\n i:0, et j:0\n i:0, et j:1\n i:0, et j:2\n i:0, et j:2\n i:2, et j:0\n i:2, et j:1\n i:2, et j:2\n i:2, et j:2\n i:3, et j:2',normalize:'trim-lines',explanation:'**`continue` saute l\'itération `i=1`** — les boucles ne s\'exécutent donc que pour `i=0` et `i=2`.\n\nPour `i=0` :\n- Boucle interne : affiche `j:0, j:1, j:2`, puis `break` sort quand `j == 2`.\n- ⚠️ **Le `break` ne fait pas `j++`** — la variable `j` reste à **2**.\n- Ligne suivante : affiche `i:0, et j:2`.\n\nPour `i=2` : même schéma, `j` finit à **2**.\n\nEnfin, `i=3` (sortie de boucle) : affiche `i:3, et j:2`.\n\n💡 **Règle :** `break` sort immédiatement, l\'avancement de la boucle `for` n\'est **pas** exécuté.'},
 {id:'ctrl-024',type:'findbug',chapter:'Chapitre 2 — Contrôle',title:'[Bug] = au lieu de ==',difficulty:3,statement:'Cliquez sur la ligne qui contient le bug.',code:`int main() {
     int x;
     scanf("%d", &x);
@@ -285,13 +285,13 @@ for (int i = 0; i < n; i++) {
     }
 }
 n = {{3}};`,blanks:[{id:'1',kind:'select',options:['!=','==','<=','>='],correct:'!='},{id:'2',kind:'select',options:['i','j','i+1','j+1'],correct:'j'},{id:'3',kind:'select',options:['i','j','8','i-1'],correct:'j'}],explanation:'Deux indices.'},
-{id:'tab-007',type:'predict',chapter:'Chapitre 3 — Tableaux',title:'Tri sélection',difficulty:5,statement:'Après 1 itération ?',code:`int tab[5] = {5, 3, 8, 1, 4};
-for (int i = 0; i < 4; i++) {
+{id:'tab-007',type:'predict',chapter:'Chapitre 3 — Tableaux',title:'Tri sélection — 1er tour uniquement',difficulty:5,statement:'Le code ci-dessous est une **version volontairement limitée** du tri par sélection : la boucle externe ne fait **qu\'un seul tour** (`i < 1`). Quel est l\'état du tableau **après ce seul tour** ?',code:`int tab[5] = {5, 3, 8, 1, 4};
+for (int i = 0; i < 1; i++) {   /* ⚠️ un seul tour */
     int min = i;
     for (int j = i + 1; j < 5; j++)
         if (tab[j] < tab[min]) min = j;
     int aide = tab[i]; tab[i] = tab[min]; tab[min] = aide;
-}`,expected:'1 3 8 5 4',normalize:'trim',explanation:'Min placé en position 0.'},
+}`,expected:'1 3 8 5 4',normalize:'trim',explanation:'Le tri par sélection place à chaque tour le **minimum restant** à sa position définitive.\n\n**Tour `i=0` :**\n- Parcours de `j=1` à `j=4` : recherche du minimum dans `[5, 3, 8, 1, 4]`.\n- Minimum trouvé : `1` à l\'indice 3.\n- Échange `tab[0]` (5) et `tab[3]` (1).\n\n→ Résultat après ce tour : **`1 3 8 5 4`**.\n\n💡 Pour obtenir le tri complet, il faudrait `i < 4`. Ici on s\'arrête après la **première** itération.'},
 {id:'tab-008',type:'predict',chapter:'Chapitre 3 — Tableaux',title:'Tri bulles',difficulty:4,statement:'Après 1 passe ?',code:`int tab[5] = {5, 1, 4, 2, 8};
 for (int j = 0; j < 4; j++) {
     if (tab[j] > tab[j+1]) {
@@ -408,7 +408,7 @@ int *q = &x;
 printf("%d\\n", x);
 printf("%d\\n", *q);`,expected:'15\n15',normalize:'trim-lines',explanation:'`*q = *q + 10` ≡ `x = x + 10`.'},
 {id:'ptr-002',type:'mcq',chapter:'Chapitre 4 — Pointeurs',title:'tab[i] équivalents',difficulty:3,statement:'Équivalents de `tab[i]` ?',multi:true,options:[{id:'a',text:'`*(tab + i)`'},{id:'b',text:'`*(q + i)` avec q=tab'},{id:'c',text:'`*q + i`'},{id:'d',text:'`*(&tab[i])`'}],correct:['a','b','d'],explanation:'`*q + i` = `tab[0] + i`.'},
-{id:'ptr-003',type:'predict',chapter:'Chapitre 4 — Pointeurs',title:'Arithmétique typée',difficulty:4,statement:'`&tab[0] = F800`, int = 4 octets. Quelles adresses ?',code:`int tab[5];
+{id:'ptr-003',type:'predict',chapter:'Chapitre 4 — Pointeurs',title:'Arithmétique typée',difficulty:4,statement:'On suppose (adresses fictives) : `&tab[0] = F800`, `int` = 4 octets. Quelles adresses sont affichées ?',code:`int tab[5];
 int *q = tab;
 printf("%p\\n", (void*)q);
 printf("%p\\n", (void*)(q + 1));
@@ -450,7 +450,7 @@ if (!tab) exit(-1);
 tab = (int*) {{1}}(tab, {{2}} * sizeof(int));
 if (!tab) exit(-2);
 {{3}}(tab);`,blanks:[{id:'1',kind:'select',options:['malloc','calloc','realloc','free'],correct:'realloc'},{id:'2',kind:'select',options:['100','130','30','230'],correct:'130'},{id:'3',kind:'select',options:['free','delete','clear','release'],correct:'free'}],explanation:'realloc conserve le contenu.'},
-{id:'ptr-012',type:'predict',chapter:'Chapitre 4 — Pointeurs',title:'Tableau 2D',difficulty:5,statement:'`mat` à F800, int=4. Quelles adresses ?',code:`int mat[3][4];
+{id:'ptr-012',type:'predict',chapter:'Chapitre 4 — Pointeurs',title:'Tableau 2D',difficulty:5,statement:'On suppose (adresses fictives) : `mat` commence à F800, `int` = 4 octets. Quelles adresses sont affichées ?',code:`int mat[3][4];
 printf("%p\\n", (void*)mat);
 printf("%p\\n", (void*)mat[1]);
 printf("%p\\n", (void*)&mat[2][0]);`,expected:'F800\nF810\nF820',normalize:'trim-lines',explanation:'Ligne i : F800 + i×16.'},
@@ -556,7 +556,7 @@ for (int i = 0; i < n; i++) tab3[{{1}}] = tab2[i];`,blanks:[{id:'1',kind:'select
     printf("%d\\n", x);
     return 0;
 }`,bugLines:[4],explanation:'**Ligne 4** : `scanf` exige une **adresse mémoire**. Passer `x` au lieu de `&x` (ou du pointeur `p`) transmet une valeur non initialisée au lieu d\'une adresse, ce qui provoque une **corruption mémoire** ou une **erreur de segmentation**.\n\n✅ Écritures correctes : `scanf("%d", &x);` ou `scanf("%d", p);`.'},
-{id:'ptr-031',type:'predict',chapter:'Chapitre 4 — Pointeurs',title:'[Variante] q avance de 2',difficulty:4,statement:'Quelles adresses sont affichées ? (int = 4, tab[0] = F800)',code:`int tab[10];
+{id:'ptr-031',type:'predict',chapter:'Chapitre 4 — Pointeurs',title:'[Variante] q avance de 2',difficulty:4,statement:'On suppose (adresses fictives) : `int = 4`, `tab[0] = F800`. Quelles adresses sont affichées ?',code:`int tab[10];
 int *q = tab + 2;
 printf("%p\\n", (void*)q);
 printf("%p\\n", (void*)(q + 2));`,expected:'F808\nF810',normalize:'trim-lines',explanation:'q = F800 + 2×4 = F808. q+2 = F810.'},
@@ -585,7 +585,9 @@ q[0] = 5;
 tab[2] = 15;`,memory:[{name:'tab[0]',type:'int',address:'F800',expected:'5'},{name:'tab[1]',type:'int',address:'F804',expected:'10'},{name:'tab[2]',type:'int',address:'F808',expected:'15'},{name:'q',type:'int*',address:'F400',expected:'F800'}],explanation:'3 notations pour les mêmes cases.'},
 
 {id:'struct-001',type:'mcq',chapter:'Chapitre 5 — Structures',title:'Accès via pointeur',difficulty:2,statement:'Équivalent de `e->ce` ?',multi:false,options:[{id:'a',text:'`*e.ce`'},{id:'b',text:'`(*e).ce`'},{id:'c',text:'`&e.ce`'},{id:'d',text:'`e.ce`'}],correct:['b'],explanation:'`e->ce` = `(*e).ce`.'},
-{id:'struct-002',type:'predict',chapter:'Chapitre 5 — Structures',title:'Précédence -> et &',difficulty:4,statement:'Quelles adresses ?',code:`ETUDIANT etd;
+{id:'struct-002',type:'predict',chapter:'Chapitre 5 — Structures',title:'Précédence -> et &',difficulty:4,statement:'Quelles adresses ?',code:`typedef struct { int ce; float notes[3]; float moyenne; } ETUDIANT;
+
+ETUDIANT etd;
 ETUDIANT *e = &etd;
 printf("%p\\n", (void*)&e->ce);
 printf("%p\\n", (void*)&e->notes);
@@ -599,12 +601,17 @@ etd.date_naiss.mois = 10;
 etd.date_naiss.annee = 1993;
 printf("%d\\n", etd.ce);
 printf("%d/%d/%d\\n", etd.date_naiss.jour, etd.date_naiss.mois, etd.date_naiss.annee);`,expected:'999\n12/10/1993',normalize:'trim-lines',explanation:'Accès en cascade.'},
-{id:'struct-004',type:'fillblanks',chapter:'Chapitre 5 — Structures',title:'Saisie via pointeur',difficulty:4,statement:'Complétez.',template:`ETUDIANT etd;
+{id:'struct-004',type:'fillblanks',chapter:'Chapitre 5 — Structures',title:'Saisie via pointeur',difficulty:4,statement:'Complétez.',template:`typedef struct { int jour, mois, annee; } DATE;
+typedef struct { int ce; DATE date_naiss; float moyenne; } ETUDIANT;
+
+ETUDIANT etd;
 ETUDIANT *e = &etd;
 scanf("%d", {{1}});
 scanf("%d%d%d", {{2}}, {{3}}, {{4}});`,blanks:[{id:'1',kind:'select',options:['&e->ce','&e.ce','e->ce','&(*e).ce'],correct:'&e->ce'},{id:'2',kind:'select',options:['&e->date_naiss.jour','&e.date_naiss.jour','e->date_naiss.jour','&e.date_naiss->jour'],correct:'&e->date_naiss.jour'},{id:'3',kind:'select',options:['&e->date_naiss.mois','&e.date_naiss.mois','e->date_naiss.mois','&e.date_naiss->mois'],correct:'&e->date_naiss.mois'},{id:'4',kind:'select',options:['&e->date_naiss.annee','&e.date_naiss.annee','e->date_naiss.annee','&e.date_naiss->annee'],correct:'&e->date_naiss.annee'}],explanation:'scanf a besoin d\'adresses.'},
 {id:'struct-005',type:'mcq',chapter:'Chapitre 5 — Structures',title:'Affectation structures',difficulty:3,statement:'`etd = et;` fait ?',multi:false,options:[{id:'a',text:'Illégal'},{id:'b',text:'Copie 1er champ'},{id:'c',text:'Copie tous les champs'},{id:'d',text:'Pointeur'}],correct:['c'],explanation:'Copie membre à membre.'},
-{id:'struct-006',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tableau pointeurs',difficulty:5,statement:'Quelles valeurs ?',code:`ETUDIANT *tab[2];
+{id:'struct-006',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tableau pointeurs',difficulty:5,statement:'Quelles valeurs ?',code:`typedef struct { int ce; float moyenne; } ETUDIANT;
+
+ETUDIANT *tab[2];
 tab[0] = (ETUDIANT*) malloc(sizeof(ETUDIANT));
 tab[1] = (ETUDIANT*) malloc(sizeof(ETUDIANT));
 tab[0]->ce = 999;
@@ -612,7 +619,9 @@ tab[1]->ce = 888;
 printf("%d\\n", tab[0]->ce);
 printf("%d\\n", (*(tab + 1))->ce);
 printf("%d\\n", tab[1]->ce);`,expected:'999\n888\n888',normalize:'trim-lines',explanation:'3 notations équivalentes.'},
-{id:'struct-007',type:'fillblanks',chapter:'Chapitre 5 — Structures',title:'Tableau dyn. pointeurs',difficulty:5,statement:'Complétez.',template:`int n;
+{id:'struct-007',type:'fillblanks',chapter:'Chapitre 5 — Structures',title:'Tableau dyn. pointeurs',difficulty:5,statement:'Complétez.',template:`typedef struct { int ce; float moyenne; } ETUDIANT;
+
+int n;
 ETUDIANT **tab;
 scanf("%d", &n);
 tab = (ETUDIANT**) {{1}}(n * {{2}}(ETUDIANT*));
@@ -624,33 +633,43 @@ for (int i = 0; i < n; i++) {
 for (int i = 0; i < n; i++) {{5}}(*(tab + i));
 {{6}}(tab);`,blanks:[{id:'1',kind:'select',options:['malloc','calloc','free','sizeof'],correct:'malloc'},{id:'2',kind:'select',options:['sizeof','size','len','malloc'],correct:'sizeof'},{id:'3',kind:'select',options:['malloc','calloc','free','sizeof'],correct:'malloc'},{id:'4',kind:'select',options:['sizeof','size','len','malloc'],correct:'sizeof'},{id:'5',kind:'select',options:['free','malloc','delete','clear'],correct:'free'},{id:'6',kind:'select',options:['free','malloc','delete','clear'],correct:'free'}],explanation:'Double allocation + libération inverse.'},
 {id:'struct-008',type:'mcq',chapter:'Chapitre 5 — Structures',title:'4 formes tableaux',difficulty:4,statement:'Tableau dynamique d\'adresses ?',multi:false,options:[{id:'a',text:'`ETUDIANT tab[2];`'},{id:'b',text:'`ETUDIANT *tab;`'},{id:'c',text:'`ETUDIANT *tab[2];`'},{id:'d',text:'`ETUDIANT **tab;`'}],correct:['d'],explanation:'`**` = tableau dynamique de pointeurs.'},
-{id:'struct-009',type:'predict',chapter:'Chapitre 5 — Structures',title:'Champ tableau statique',difficulty:4,statement:'Qu\'affiche ce programme ?',code:`ETUDIANT etd;
+{id:'struct-009',type:'predict',chapter:'Chapitre 5 — Structures',title:'Champ tableau statique',difficulty:4,statement:'Qu\'affiche ce programme ?',code:`typedef struct { int ce; float notes[3]; float moyenne; } ETUDIANT;
+
+ETUDIANT etd;
 etd.ce = 999;
 etd.notes[0] = 14.5;
 etd.notes[1] = 15.5;
 etd.notes[2] = 16.5;
 for (int i = 0; i < 3; i++) printf("%.1f ", etd.notes[i]);`,expected:'14.5 15.5 16.5 ',normalize:'trim',explanation:'Accès etd.notes[i].'},
-{id:'struct-010',type:'fillblanks',chapter:'Chapitre 5 — Structures',title:'Champ tableau dynamique',difficulty:5,statement:'Complétez.',template:`ETUDIANT etd;
+{id:'struct-010',type:'fillblanks',chapter:'Chapitre 5 — Structures',title:'Champ tableau dynamique',difficulty:5,statement:'Complétez.',template:`typedef struct { int ce; int nb_notes; float *notes; float moyenne; } ETUDIANT;
+
+ETUDIANT etd;
 scanf("%d", &etd.nb_notes);
 etd.notes = (float*) {{1}}(etd.nb_notes * {{2}}(float));
 if (!etd.notes) exit(-1);
 for (int i = 0; i < etd.nb_notes; i++)
     scanf("%f", {{3}});
 {{4}}(etd.notes);`,blanks:[{id:'1',kind:'select',options:['malloc','calloc','free','realloc'],correct:'malloc'},{id:'2',kind:'select',options:['sizeof','size','len','malloc'],correct:'sizeof'},{id:'3',kind:'select',options:['&etd.notes[i]','etd.notes[i]','&etd->notes[i]','etd.notes+i'],correct:'&etd.notes[i]'},{id:'4',kind:'select',options:['free','malloc','delete','clear'],correct:'free'}],explanation:'Champ pointeur + allocation.'},
-{id:'struct-011',type:'predict',chapter:'Chapitre 5 — Structures',title:'Pointeur + allocation',difficulty:5,statement:'Qu\'affiche ce programme ?',code:`ETUDIANT *e = (ETUDIANT*) malloc(sizeof(ETUDIANT));
+{id:'struct-011',type:'predict',chapter:'Chapitre 5 — Structures',title:'Pointeur + allocation',difficulty:5,statement:'Qu\'affiche ce programme ?',code:`typedef struct { int ce; float moyenne; } ETUDIANT;
+
+ETUDIANT *e = (ETUDIANT*) malloc(sizeof(ETUDIANT));
 e->ce = 999;
 e->moyenne = 17.32;
 printf("%d %.2f\\n", e->ce, e->moyenne);
 free(e);
 e = NULL;
 printf("%s\\n", e == NULL ? "Libéré" : "Non nul");`,expected:'999 17.32\nLibéré',normalize:'trim-lines',explanation:'Pattern allocation + libération.'},
-{id:'struct-012',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tableau statique structures',difficulty:4,statement:'Qu\'affiche ce programme ?',code:`ETUDIANT tab[3];
+{id:'struct-012',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tableau statique structures',difficulty:4,statement:'Qu\'affiche ce programme ?',code:`typedef struct { int ce; float moyenne; } ETUDIANT;
+
+ETUDIANT tab[3];
 for (int i = 0; i < 3; i++) {
     tab[i].ce = 100 + i;
     tab[i].moyenne = 10.0 + i;
 }
 for (int i = 0; i < 3; i++) printf("%d %.1f\\n", tab[i].ce, tab[i].moyenne);`,expected:'100 10.0\n101 11.0\n102 12.0',normalize:'trim-lines',explanation:'Accès tab[i].champ.'},
-{id:'struct-013',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tableau statique pointeurs',difficulty:5,statement:'Quelles valeurs ?',code:`ETUDIANT *tab[2];
+{id:'struct-013',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tableau statique pointeurs',difficulty:5,statement:'Quelles valeurs ?',code:`typedef struct { int ce; } ETUDIANT;
+
+ETUDIANT *tab[2];
 tab[0] = (ETUDIANT*) malloc(sizeof(ETUDIANT));
 tab[1] = (ETUDIANT*) malloc(sizeof(ETUDIANT));
 tab[0]->ce = 100;
@@ -659,7 +678,9 @@ printf("%d\\n", tab[0]->ce);
 printf("%d\\n", (*tab[1]).ce);
 printf("%d\\n", (*tab)->ce);`,expected:'100\n200\n100',normalize:'trim-lines',explanation:'`(*tab)->ce` = `tab[0]->ce`.'},
 {id:'struct-014',type:'mcq',chapter:'Chapitre 5 — Structures',title:'Structure en paramètre',difficulty:4,statement:'Que se passe-t-il en passant une structure à une fonction ?',multi:false,options:[{id:'a',text:'Copiée par valeur'},{id:'b',text:'Pointeur passé'},{id:'c',text:'Erreur'},{id:'d',text:'Dépend'}],correct:['a'],explanation:'Passage par valeur.'},
-{id:'struct-015',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tableau dynamique adresses',difficulty:5,statement:'Quelles valeurs ?',code:`int n = 3;
+{id:'struct-015',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tableau dynamique adresses',difficulty:5,statement:'Quelles valeurs ?',code:`typedef struct { int ce; } ETUDIANT;
+
+int n = 3;
 ETUDIANT **tab;
 tab = (ETUDIANT**) malloc(n * sizeof(ETUDIANT*));
 for (int i = 0; i < n; i++) {
@@ -677,7 +698,9 @@ struct etudiant { int ce; DATE date_naiss; };
     float moyenne;
 } ETUDIANT;`,expected:'20',normalize:'trim',explanation:'5 × 4 = 20 octets.'},
 {id:'struct-018',type:'mcq',chapter:'Chapitre 5 — Structures',title:'Moyenne des notes',difficulty:4,statement:'Comment calculer la moyenne ?',multi:false,options:[{id:'a',text:'`etd.notes / etd.nb_notes`'},{id:'b',text:'Boucle qui somme puis divise'},{id:'c',text:'`sum(etd.notes)`'},{id:'d',text:'Impossible'}],correct:['b'],explanation:'Boucle obligatoire en C.'},
-{id:'struct-019',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tri structures',difficulty:5,statement:'Après tri, ce en position 0 ?',code:`ETUDIANT tab[3];
+{id:'struct-019',type:'predict',chapter:'Chapitre 5 — Structures',title:'Tri structures',difficulty:5,statement:'Après tri, ce en position 0 ?',code:`typedef struct { int ce; float moyenne; } ETUDIANT;
+
+ETUDIANT tab[3];
 tab[0].ce = 100; tab[0].moyenne = 12.5;
 tab[1].ce = 101; tab[1].moyenne = 15.8;
 tab[2].ce = 102; tab[2].moyenne = 14.2;
@@ -702,12 +725,14 @@ printf("%.1f\\n", *p);
 printf("%.1f\\n", *q);
 printf("%.1f\\n", *(p + 1));
 printf("%ld\\n", q - p);`,expected:'10.5\n15.5\n12.5\n2',normalize:'trim-lines',explanation:'q-p = nb d\'éléments.'},
-{id:'struct-022',type:'mcq',chapter:'Chapitre 5 — Structures',title:'Structure imbriquée via pointeur',difficulty:3,statement:'Accès via `e` pointeur sur ETUDIANT ?',multi:false,options:[{id:'a',text:'`e.date_naiss.jour`'},{id:'b',text:'`e->date_naiss.jour`'},{id:'c',text:'`e.date_naiss->jour`'},{id:'d',text:'`e->date_naiss->jour`'}],correct:['b'],explanation:'Un seul `->`.'},
+{id:'struct-022',type:'mcq',chapter:'Chapitre 5 — Structures',title:'Structure imbriquée via pointeur',difficulty:3,statement:'Soit `typedef struct { int jour, mois, annee; } DATE;` et `typedef struct { int ce; DATE date_naiss; } ETUDIANT;`.\n\nAvec `ETUDIANT etd; ETUDIANT *e = &etd;`, comment accéder au champ `jour` ?',multi:false,options:[{id:'a',text:'`e.date_naiss.jour`'},{id:'b',text:'`e->date_naiss.jour`'},{id:'c',text:'`e.date_naiss->jour`'},{id:'d',text:'`e->date_naiss->jour`'}],correct:['b'],explanation:'Un seul `->`.'},
 {id:'struct-023',type:'predict',chapter:'Chapitre 5 — Structures',title:'Moyenne pondérée',difficulty:5,statement:'Qu\'affiche ce programme ?',code:`typedef struct { float tp, ds, examen; } NOTES;
 NOTES n = {12.0, 14.0, 16.0};
 float moyenne = n.tp * 0.2 + n.ds * 0.3 + n.examen * 0.5;
 printf("%.2f\\n", moyenne);`,expected:'14.60',normalize:'trim',explanation:'12×0.2 + 14×0.3 + 16×0.5 = 14.6.'},
-{id:'struct-024',type:'fillblanks',chapter:'Chapitre 5 — Structures',title:'Structure + tableau dynamique',difficulty:5,statement:'Complétez.',template:`ETUDIANT *e = (ETUDIANT*) malloc(sizeof(ETUDIANT));
+{id:'struct-024',type:'fillblanks',chapter:'Chapitre 5 — Structures',title:'Structure + tableau dynamique',difficulty:5,statement:'Complétez.',template:`typedef struct { int ce; int nb_notes; float *notes; float moyenne; } ETUDIANT;
+
+ETUDIANT *e = (ETUDIANT*) malloc(sizeof(ETUDIANT));
 scanf("%d", &e->nb_notes);
 e->notes = (float*) {{1}}(e->nb_notes * {{2}}(float));
 if (!e->notes) exit(-1);
@@ -716,9 +741,9 @@ for (int i = 0; i < e->nb_notes; i++)
 {{4}}(e->notes);
 {{5}}(e);`,blanks:[{id:'1',kind:'select',options:['malloc','calloc','free','realloc'],correct:'malloc'},{id:'2',kind:'select',options:['sizeof','size','len','malloc'],correct:'sizeof'},{id:'3',kind:'select',options:['&e->notes[i]','e->notes[i]','&e.notes[i]','e.notes+i'],correct:'&e->notes[i]'},{id:'4',kind:'select',options:['free','malloc','delete','clear'],correct:'free'},{id:'5',kind:'select',options:['free','malloc','delete','clear'],correct:'free'}],explanation:'Libérer d\'abord notes, puis e.'},
 {id:'struct-025',type:'mcq',chapter:'Chapitre 5 — Structures',title:'Modèle vs variable',difficulty:2,statement:'Peut-on avoir plusieurs variables d\'un même modèle ?',multi:false,options:[{id:'a',text:'Non'},{id:'b',text:'Oui'},{id:'c',text:'Seulement 2'},{id:'d',text:'Dépend'}],correct:['b'],explanation:'Un modèle est un type.'},
-{id:'struct-026',type:'mcq',chapter:'Chapitre 5 — Structures',title:'[Série 5] Q1 — Remplir et afficher',difficulty:3,statement:'Pour remplir une variable `ETUDIANT etd`, quelle écriture est correcte ?',multi:false,options:[{id:'a',text:'`scanf("%d", etd.ce);`'},{id:'b',text:'`scanf("%d", &etd.ce);`'},{id:'c',text:'`scanf("%d", etd->ce);`'},{id:'d',text:'`scanf("%d", *etd.ce);`'}],correct:['b'],explanation:'Il faut l\'adresse : `&etd.ce`.'},
-{id:'struct-027',type:'mcq',chapter:'Chapitre 5 — Structures',title:'[Série 5] Q2 — Pointeur sur variable',difficulty:4,statement:'Avec `ETUDIANT etd; ETUDIANT *e = &etd;`, comment accéder à `ce` ?',multi:false,options:[{id:'a',text:'`e.ce`'},{id:'b',text:'`(*e).ce` ou `e->ce`'},{id:'c',text:'`&e.ce`'},{id:'d',text:'`*e.ce`'}],correct:['b'],explanation:'Équivalentes.'},
-{id:'struct-028',type:'mcq',chapter:'Chapitre 5 — Structures',title:'[Série 5] Q3 — Tableau dynamique',difficulty:4,statement:'Pour un tableau dynamique de `n` ETUDIANT, quelle déclaration ?',multi:false,options:[{id:'a',text:'`ETUDIANT tab[n];`'},{id:'b',text:'`ETUDIANT *tab = malloc(n * sizeof(ETUDIANT));`'},{id:'c',text:'`ETUDIANT **tab;`'},{id:'d',text:'`ETUDIANT tab[];`'}],correct:['b'],explanation:'Pointeur + malloc = tableau dynamique.'},
+{id:'struct-026',type:'mcq',chapter:'Chapitre 5 — Structures',title:'[Série 5] Q1 — Remplir et afficher',difficulty:3,statement:'Soit `typedef struct { int ce; float moyenne; } ETUDIANT;` et `ETUDIANT etd;`.\n\nPour remplir `etd.ce` au clavier, quelle écriture est correcte ?',multi:false,options:[{id:'a',text:'`scanf("%d", etd.ce);`'},{id:'b',text:'`scanf("%d", &etd.ce);`'},{id:'c',text:'`scanf("%d", etd->ce);`'},{id:'d',text:'`scanf("%d", *etd.ce);`'}],correct:['b'],explanation:'Il faut l\'adresse : `&etd.ce`.'},
+{id:'struct-027',type:'mcq',chapter:'Chapitre 5 — Structures',title:'[Série 5] Q2 — Pointeur sur variable',difficulty:4,statement:'Soit `typedef struct { int ce; float moyenne; } ETUDIANT;` et `ETUDIANT etd; ETUDIANT *e = &etd;`.\n\nComment accéder au champ `ce` ?',multi:false,options:[{id:'a',text:'`e.ce`'},{id:'b',text:'`(*e).ce` ou `e->ce`'},{id:'c',text:'`&e.ce`'},{id:'d',text:'`*e.ce`'}],correct:['b'],explanation:'Équivalentes.'},
+{id:'struct-028',type:'mcq',chapter:'Chapitre 5 — Structures',title:'[Série 5] Q3 — Tableau dynamique',difficulty:4,statement:'Soit `typedef struct { int ce; float moyenne; } ETUDIANT;`.\n\nPour créer un **tableau dynamique** de `n` ETUDIANT (structures complètes en mémoire), quelle déclaration est correcte ?',multi:false,options:[{id:'a',text:'`ETUDIANT tab[n];`'},{id:'b',text:'`ETUDIANT *tab = malloc(n * sizeof(ETUDIANT));`'},{id:'c',text:'`ETUDIANT **tab;`'},{id:'d',text:'`ETUDIANT tab[];`'}],correct:['b'],explanation:'Pointeur + malloc = tableau dynamique.'},
 {id:'struct-029',type:'findbug',chapter:'Chapitre 5 — Structures',title:'[Bug] -> vs .',difficulty:4,statement:'Cliquez sur la ligne qui contient le bug.',code:`typedef struct { int ce; float moyenne; } ETUDIANT;
 int main() {
     ETUDIANT etd;
