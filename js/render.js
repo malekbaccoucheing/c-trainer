@@ -36,7 +36,8 @@ function renderExercise() {
   const canShowFeedback = verdict && (!examActive || examSubmitted);
 
   let body = '';
-  if (ex.statement) body += `<p class="text-slate-300 mb-4 leading-relaxed">${renderMarkdown(ex.statement)}</p>`;
+  // ⭐ CORRIGÉ — `<div>` au lieu de `<p>` (renderMarkdown peut produire des <ul> ou <pre>)
+  if (ex.statement) body += `<div class="text-slate-300 mb-4 leading-relaxed">${renderMarkdown(ex.statement)}</div>`;
   if (ex.code && ex.type !== 'findbug') body += `<pre class="code-block mb-4"><code class="language-c">${escapeHtml(ex.code)}</code></pre>`;
 
   switch (ex.type) {
@@ -131,11 +132,12 @@ function renderTrace(ex, answer) {
   </div><p class="text-xs text-slate-500 mt-2">Remplissez les cellules.</p>`;
 }
 
+// ⭐ CORRIGÉ — overflow-x-auto au lieu d'overflow-hidden (permet le scroll des longues lignes)
 function renderFindBug(ex, answer) {
   const selectedLine = answer?.line ?? null;
   const lines = ex.code.split('\n');
-  return `<div class="code-block p-0 overflow-hidden">
-    <div class="py-3" id="findbug-lines">
+  return `<div class="code-block p-0 overflow-x-auto">
+    <div class="py-3 min-w-full" id="findbug-lines">
       ${lines.map((line, i) => {
         const lineNum = i + 1;
         const isSelected = selectedLine === lineNum;
@@ -178,6 +180,9 @@ function renderMemory(ex, answer) {
   <p class="text-xs text-slate-500 mt-2">Remplissez la valeur finale. Pour un pointeur, indiquez l'**adresse**.</p>`;
 }
 
+// ═══════════════════════════════════════════════════════════════
+//  FEEDBACK — Analyse contextuelle selon la réponse
+// ═══════════════════════════════════════════════════════════════
 function renderFeedback(ex, verdict) {
   const isCorrect = verdict.correct;
   const icon = isCorrect ? '✓' : '✗';
@@ -187,9 +192,79 @@ function renderFeedback(ex, verdict) {
   const titleClass = isCorrect ? 'font-semibold text-emerald-400' : 'font-semibold text-red-400';
   let detailsHtml = '';
 
+  // ⭐ QCM — analyse contextuelle de la réponse
+  if (ex.type === 'mcq') {
+    const userSet = new Set((verdict.user || '').split(',').map(s => s.trim()).filter(Boolean));
+    const wrongSelected = ex.options.filter(o => userSet.has(o.id) && !ex.correct.includes(o.id));
+    const correctOptions = ex.options.filter(o => ex.correct.includes(o.id));
+    const missedCorrect = correctOptions.filter(o => !userSet.has(o.id));
+
+    if (!isCorrect) {
+      if (wrongSelected.length > 0) {
+        detailsHtml += `<div class="mt-4 pt-4 border-t border-slate-700">
+          <div class="text-xs uppercase tracking-wider text-red-400 mb-3 flex items-center gap-2">
+            <span>🔍</span>
+            <span>Analyse de ${wrongSelected.length > 1 ? 'vos choix' : 'votre choix'} incorrect${wrongSelected.length > 1 ? 's' : ''}</span>
+          </div>
+          <div class="space-y-3">
+            ${wrongSelected.map(w => `
+              <div class="rounded-lg border border-red-500/30 bg-red-500/5 p-3">
+                <div class="flex items-start gap-2 mb-2">
+                  <span class="text-red-400 font-bold shrink-0 mt-0.5">✗</span>
+                  <span class="text-sm text-red-200 font-medium">${renderMarkdown(w.text)}</span>
+                </div>
+                <div class="text-sm text-slate-300 leading-relaxed pl-6">
+                  ${w.feedback ? renderMarkdown(w.feedback) : '<em class="text-slate-500">Aucune explication spécifique pour cette option.</em>'}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+      }
+
+      if (missedCorrect.length > 0) {
+        detailsHtml += `<div class="mt-4 pt-4 border-t border-slate-700">
+          <div class="text-xs uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-2">
+            <span>💡</span>
+            <span>Réponse${correctOptions.length > 1 ? 's' : ''} correcte${correctOptions.length > 1 ? 's' : ''}</span>
+          </div>
+          <div class="space-y-3">
+            ${missedCorrect.map(c => `
+              <div class="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                <div class="flex items-start gap-2 mb-2">
+                  <span class="text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
+                  <span class="text-sm text-emerald-200 font-medium">${renderMarkdown(c.text)}</span>
+                </div>
+                ${c.feedback ? `<div class="text-sm text-slate-300 leading-relaxed pl-6">${renderMarkdown(c.feedback)}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        </div>`;
+      }
+    } else {
+      detailsHtml += `<div class="mt-3 pt-3 border-t border-slate-700">
+        <div class="text-xs uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-2">
+          <span>💡</span>
+          <span>Réponse${correctOptions.length > 1 ? 's' : ''} validée${correctOptions.length > 1 ? 's' : ''}</span>
+        </div>
+        <div class="space-y-2">
+          ${correctOptions.map(c => `
+            <div class="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-2.5">
+              <div class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold shrink-0 mt-0.5">✓</span>
+                <span class="text-sm text-emerald-200">${renderMarkdown(c.text)}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>`;
+    }
+  }
+
+  // ───── AUTRES TYPES ─────
   if (ex.type === 'fillblanks' && verdict.details) {
     const wrong = verdict.details.filter(d => !d.ok);
-    if (wrong.length) detailsHtml = `<div class="mt-3 pt-3 border-t border-slate-700">
+    if (wrong.length) detailsHtml += `<div class="mt-3 pt-3 border-t border-slate-700">
       <div class="text-xs text-slate-400 mb-2">Détail :</div>
       <div class="space-y-1">${wrong.map(d => `<div class="text-sm"><span class="text-slate-500 mono">[${d.id}]</span> Vous : <span class="text-red-400 mono">${escapeHtml(d.user) || '(vide)'}</span> — Attendu : <span class="text-emerald-400 mono">${escapeHtml(d.correct)}</span></div>`).join('')}</div>
     </div>`;
@@ -197,17 +272,13 @@ function renderFeedback(ex, verdict) {
   if (ex.type === 'trace' && verdict.details) {
     const wrongCells = [];
     verdict.details.forEach((r, i) => r.cells.forEach((c, j) => { if (!c.ok) wrongCells.push({ row: i + 1, col: ex.columns[j], user: c.user, correct: c.correct }); }));
-    if (wrongCells.length) detailsHtml = `<div class="mt-3 pt-3 border-t border-slate-700">
+    if (wrongCells.length) detailsHtml += `<div class="mt-3 pt-3 border-t border-slate-700">
       <div class="text-xs text-slate-400 mb-2">Cellules incorrectes :</div>
       <div class="space-y-1">${wrongCells.map(w => `<div class="text-sm">Ligne ${w.row}, <span class="mono">${escapeHtml(w.col)}</span> : Vous : <span class="text-red-400 mono">${escapeHtml(w.user) || '(vide)'}</span> — Attendu : <span class="text-emerald-400 mono">${escapeHtml(w.correct)}</span></div>`).join('')}</div>
     </div>`;
   }
-  if (ex.type === 'mcq' && !verdict.correct) {
-    const correctText = ex.options.filter(o => ex.correct.includes(o.id)).map(o => o.text).join(', ');
-    detailsHtml = `<div class="mt-3 pt-3 border-t border-slate-700"><div class="text-sm">Bonnes réponses : <span class="text-emerald-400">${renderMarkdown(correctText)}</span></div></div>`;
-  }
   if (ex.type === 'predict' && !verdict.correct) {
-    detailsHtml = `<div class="mt-3 pt-3 border-t border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-3">
+    detailsHtml += `<div class="mt-3 pt-3 border-t border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div><div class="text-xs text-red-400 mb-1">Votre réponse</div>
         <pre class="bg-slate-900 border border-red-900/40 rounded p-3 mono text-sm text-red-300 whitespace-pre-wrap">${escapeHtml(verdict.user) || '(vide)'}</pre></div>
       <div><div class="text-xs text-emerald-400 mb-1">Attendu</div>
@@ -218,9 +289,9 @@ function renderFeedback(ex, verdict) {
     const userLine = verdict.user;
     const correctLines = ex.bugLines;
     if (isCorrect) {
-      detailsHtml = `<div class="mt-3 pt-3 border-t border-slate-700"><div class="text-sm text-emerald-300">✅ Vous avez identifié la ligne ${userLine}.</div></div>`;
+      detailsHtml += `<div class="mt-3 pt-3 border-t border-slate-700"><div class="text-sm text-emerald-300">✅ Vous avez identifié la ligne ${userLine}.</div></div>`;
     } else {
-      detailsHtml = `<div class="mt-3 pt-3 border-t border-slate-700">
+      detailsHtml += `<div class="mt-3 pt-3 border-t border-slate-700">
         <div class="text-sm">Vous avez cliqué : <span class="text-red-400 mono">ligne ${escapeHtml(userLine) || '(aucune)'}</span></div>
         <div class="text-sm">Ligne(s) correcte(s) : <span class="text-emerald-400 mono">${correctLines.join(', ')}</span></div>
       </div>`;
@@ -228,7 +299,7 @@ function renderFeedback(ex, verdict) {
   }
   if (ex.type === 'memory' && verdict.details) {
     const wrong = verdict.details.filter(d => !d.ok);
-    if (wrong.length) detailsHtml = `<div class="mt-3 pt-3 border-t border-slate-700">
+    if (wrong.length) detailsHtml += `<div class="mt-3 pt-3 border-t border-slate-700">
       <div class="text-xs text-slate-400 mb-2">Cellules incorrectes :</div>
       <div class="space-y-1">${wrong.map(d => `<div class="text-sm mono">${escapeHtml(d.name)} : Vous : <span class="text-red-400">${escapeHtml(d.user) || '(vide)'}</span> — Attendu : <span class="text-emerald-400">${escapeHtml(d.correct)}</span></div>`).join('')}</div>
     </div>`;
@@ -243,6 +314,13 @@ function renderFeedback(ex, verdict) {
     ${detailsHtml}
   </div>`;
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  ÉVÉNEMENTS — attachEvents
+//  ⭐ CORRIGÉ — chaque handler qui supprime un verdict appelle
+//  aussi renderSidebar() + updateProgress() pour mettre à jour
+//  immédiatement la coche dans la sidebar et le compteur.
+// ═══════════════════════════════════════════════════════════════
 
 function attachEvents(ex) {
   if (ex.type === 'mcq') {
@@ -260,7 +338,13 @@ function attachEvents(ex) {
           dot.className = `w-5 h-5 rounded-full border-2 ${current.has(o) ? 'border-emerald-500 bg-emerald-500' : 'border-slate-600'} flex items-center justify-center shrink-0`;
           dot.innerHTML = current.has(o) ? '<div class="w-2 h-2 rounded-full bg-white"></div>' : '';
         });
-        if (state.verdicts[ex.id] && !isExamActive()) { delete state.verdicts[ex.id]; const fb = main.querySelector('.fade-in > .rounded-xl'); if (fb) fb.remove(); }
+        if (state.verdicts[ex.id] && !isExamActive()) {
+          delete state.verdicts[ex.id];
+          const fb = main.querySelector('.fade-in > .rounded-xl');
+          if (fb) fb.remove();
+          renderSidebar();
+          updateProgress();
+        }
         saveState();
       });
     });
@@ -269,7 +353,13 @@ function attachEvents(ex) {
     const input = document.getElementById('predict-input');
     if (input) input.addEventListener('input', () => {
       state.answers[ex.id] = input.value;
-      if (state.verdicts[ex.id] && !isExamActive()) { delete state.verdicts[ex.id]; const fb = main.querySelector('.fade-in > .rounded-xl'); if (fb) fb.remove(); }
+      if (state.verdicts[ex.id] && !isExamActive()) {
+        delete state.verdicts[ex.id];
+        const fb = main.querySelector('.fade-in > .rounded-xl');
+        if (fb) fb.remove();
+        renderSidebar();
+        updateProgress();
+      }
       saveState();
     });
   }
@@ -279,7 +369,13 @@ function attachEvents(ex) {
         const id = el.dataset.blank;
         state.answers[ex.id] = state.answers[ex.id] || {};
         state.answers[ex.id][id] = el.value;
-        if (state.verdicts[ex.id] && !isExamActive()) { delete state.verdicts[ex.id]; const fb = main.querySelector('.fade-in > .rounded-xl'); if (fb) fb.remove(); }
+        if (state.verdicts[ex.id] && !isExamActive()) {
+          delete state.verdicts[ex.id];
+          const fb = main.querySelector('.fade-in > .rounded-xl');
+          if (fb) fb.remove();
+          renderSidebar();
+          updateProgress();
+        }
         saveState();
       };
       el.addEventListener('input', handler);
@@ -293,7 +389,13 @@ function attachEvents(ex) {
         state.answers[ex.id] = state.answers[ex.id] || [];
         state.answers[ex.id][r] = state.answers[ex.id][r] || [];
         state.answers[ex.id][r][c] = el.value;
-        if (state.verdicts[ex.id] && !isExamActive()) { delete state.verdicts[ex.id]; const fb = main.querySelector('.fade-in > .rounded-xl'); if (fb) fb.remove(); }
+        if (state.verdicts[ex.id] && !isExamActive()) {
+          delete state.verdicts[ex.id];
+          const fb = main.querySelector('.fade-in > .rounded-xl');
+          if (fb) fb.remove();
+          renderSidebar();
+          updateProgress();
+        }
         saveState();
       });
     });
@@ -306,7 +408,13 @@ function attachEvents(ex) {
         main.querySelectorAll('.bug-line').forEach(l => {
           l.classList.toggle('selected', parseInt(l.dataset.line) === line);
         });
-        if (state.verdicts[ex.id] && !isExamActive()) { delete state.verdicts[ex.id]; const fb = main.querySelector('.fade-in > .rounded-xl'); if (fb) fb.remove(); }
+        if (state.verdicts[ex.id] && !isExamActive()) {
+          delete state.verdicts[ex.id];
+          const fb = main.querySelector('.fade-in > .rounded-xl');
+          if (fb) fb.remove();
+          renderSidebar();
+          updateProgress();
+        }
         saveState();
       });
     });
@@ -318,12 +426,22 @@ function attachEvents(ex) {
         state.answers[ex.id] = state.answers[ex.id] || { values: {} };
         if (!state.answers[ex.id].values) state.answers[ex.id].values = {};
         state.answers[ex.id].values[idx] = el.value;
-        if (state.verdicts[ex.id] && !isExamActive()) { delete state.verdicts[ex.id]; const fb = main.querySelector('.fade-in > .rounded-xl'); if (fb) fb.remove(); }
+        if (state.verdicts[ex.id] && !isExamActive()) {
+          delete state.verdicts[ex.id];
+          const fb = main.querySelector('.fade-in > .rounded-xl');
+          if (fb) fb.remove();
+          renderSidebar();
+          updateProgress();
+        }
         saveState();
       });
     });
   }
 }
+
+// ═══════════════════════════════════════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════════════════════════════════════
 
 function submitAnswer() {
   if (isExamActive()) { toast("Correction différée en mode examen.", 'info'); return; }
@@ -333,11 +451,25 @@ function submitAnswer() {
     const ta = document.getElementById('predict-input');
     if (ta) state.answers[ex.id] = ta.value;
   }
-  const verdict = grade(ex, state.answers[ex.id]);
+
+  // ⭐ Vérifier que la réponse n'est pas vide
+  const answer = state.answers[ex.id];
+  const isEmpty =
+    answer === undefined ||
+    answer === null ||
+    (typeof answer === 'string' && answer.trim() === '') ||
+    (Array.isArray(answer) && answer.length === 0) ||
+    (typeof answer === 'object' && !Array.isArray(answer) && Object.keys(answer).length === 0);
+
+  if (isEmpty) { toast("Aucune réponse à vérifier", 'info'); return; }
+
+  const verdict = grade(ex, answer);
   if (!verdict) { toast("Aucune réponse à vérifier", 'info'); return; }
   state.verdicts[ex.id] = verdict;
   saveState();
-  renderExercise(); renderSidebar(); updateProgress();
+  renderExercise();
+  renderSidebar();
+  updateProgress();
 }
 
 function clearAnswer() {
@@ -346,7 +478,9 @@ function clearAnswer() {
   delete state.answers[ex.id];
   delete state.verdicts[ex.id];
   saveState();
-  renderExercise(); renderSidebar(); updateProgress();
+  renderExercise();
+  renderSidebar();
+  updateProgress();
 }
 
 function selectExercise(id) {
@@ -354,7 +488,8 @@ function selectExercise(id) {
   const ex = EXERCISES.find(e => e.id === id);
   if (ex) state.openChapter = ex.chapter;
   saveState();
-  renderSidebar(); renderExercise();
+  renderSidebar();
+  renderExercise();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -372,5 +507,9 @@ function resetAll() {
   currentId = EXERCISES[0].id;
   state.openChapter = EXERCISES[0].chapter;
   saveState();
-  renderHeader(); renderSidebar(); renderExercise(); renderSelectionBanner(); updateProgress();
+  renderHeader();
+  renderSidebar();
+  renderExercise();
+  renderSelectionBanner();
+  updateProgress();
 }
